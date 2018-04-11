@@ -6,15 +6,29 @@ import time
 
 import thread
 
+from hystrix_command import HystrixCommand
 from hystrix_config import logger
 from hystrix import addHystrix
 
+class MyHystrixCommand(HystrixCommand):
+    def __init__(self,*args, **kwargs):
+        print "init Myhystrix Command"
+        HystrixCommand.__init__(self, *args,**kwargs)
 
 class Test():
 
-    def failback(self):
+    def __init__(self):
+        self.count =1
+    def failback(self, b):
         logger.info('custome fall back')
         return 1,2
+
+    def condition(self, a, b):
+        self.count+=1
+        self.cond = True
+        if self.count == 10:
+            self.cond = False
+        return self.cond
 
     @addHystrix(groupKey='group1',
                 key='hello1',
@@ -49,6 +63,19 @@ class Test():
         time.sleep(0.5)
         logger.info('hello4')
 
+    @addHystrix(
+        groupKey='group1',
+        key='hello1',
+        hystrix_command_class=MyHystrixCommand,
+        hystrix_pre_condition=condition,
+        hystrix_failback=failback,
+        hystrix_fail_threshold=10,
+        hystrix_retry_interval=40,
+        hystrix_retry_fail_threshold=100
+        )
+    def hello5(self, a, b):
+        logger.info('hello5')
+
     def testHystrix1(self):
         for i in xrange(100,200):
             self.hello()
@@ -69,7 +96,7 @@ class Test():
         thread.start_new_thread(self.testHystrix1,())
         thread.start_new_thread(self.testHystrix2,())
         thread.start_new_thread(self.testHystrix3,())
-        thread.start_new_thread(self.testHystrix4, ())
+        thread.start_new_thread(self.testHystrix4,())
 
     def testHystrix(self):
         i = 0
@@ -92,10 +119,15 @@ class Test():
             self.hello1()
             time.sleep(5)
 
+    def testHystrix2(self):
+        for i in range(20):
+            self.hello5(1,2)
+        self.hello5(1,2)
+
 if __name__ == '__main__':
     test = Test()
 
-    test.testHystrix()
+    test.testHystrix2()
 
     #test.testHystrixMultiThread()
     #time.sleep(50)

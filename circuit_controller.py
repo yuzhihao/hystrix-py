@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
+# by yuzhihao
+
 import threading
 
 import time
@@ -22,7 +24,7 @@ class CircuitController:
         self._fail_threshold = fail_threshold
         self._retry_interval = retry_interval
         self._retry_fail_threshold = retry_fail_threshold
-
+        print fail_threshold,retry_interval,retry_fail_threshold
         self._half_open_time = 0
         self._fail_count = 0
         self._retry_fail_count = 0
